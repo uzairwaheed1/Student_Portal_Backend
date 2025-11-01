@@ -23,7 +23,59 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Student Portal Backend - A NestJS application with JWT-based authentication system supporting three user roles: Admin, Faculty, and Student.
+
+## Authentication System
+
+This application includes a complete authentication system with the following features:
+
+### User Roles
+- **Admin**: Full system access
+- **Faculty**: Faculty-specific access
+- **Student**: Student-specific access
+
+### Login Endpoints
+- `POST /auth/admin/login` - Admin login
+- `POST /auth/faculty/login` - Faculty login  
+- `POST /auth/student/login` - Student login
+
+### Demo Credentials
+```json
+// Admin
+{
+  "email": "admin@portal.com",
+  "password": "admin123"
+}
+
+// Faculty
+{
+  "email": "faculty@portal.com", 
+  "password": "faculty123"
+}
+
+// Student
+{
+  "email": "student@portal.com",
+  "password": "student123"
+}
+```
+
+### Protected Routes
+- `GET /admin/dashboard` - Admin dashboard (requires Admin role)
+- `GET /faculty/dashboard` - Faculty dashboard (requires Faculty role)
+- `GET /student/dashboard` - Student dashboard (requires Student role)
+
+### Authentication Flow
+1. Send POST request to appropriate login endpoint with email and password
+2. Receive JWT token in response
+3. Include token in Authorization header: `Bearer <token>`
+4. Access protected routes with proper role permissions
+
+### Environment Configuration
+Set the following environment variable for production:
+```
+JWT_SECRET=your-secret-key-change-in-production
+```
 
 ## Project setup
 
