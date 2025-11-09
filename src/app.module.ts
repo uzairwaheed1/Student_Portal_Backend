@@ -7,9 +7,9 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 
 @Module({
- imports: [
+  imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // so you can use process.env anywhere
+      isGlobal: true,
     }),
     TypeOrmModule.forRoot({
       type: 'postgres',
@@ -18,12 +18,14 @@ import { AuthModule } from './auth/auth.module';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      autoLoadEntities: true, // automatically loads entities
-      synchronize: true, // only for development, not for production
+      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      synchronize: true,
+      logging: true,
     }),
     UserModule,
     AuthModule,
-  ],  controllers: [AppController],
+  ],
+  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}
