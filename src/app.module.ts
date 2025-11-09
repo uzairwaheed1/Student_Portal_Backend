@@ -5,6 +5,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { User } from './entities/user.entity';
+import { AdminProfile } from './entities/admin-profile.entity';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
  imports: [
@@ -21,8 +24,11 @@ import { AuthModule } from './auth/auth.module';
       autoLoadEntities: true, // automatically loads entities
       synchronize: true, // only for development, not for production
     }),
+        TypeOrmModule.forFeature([User, AdminProfile]),
+
     UserModule,
     AuthModule,
+    SeedModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })

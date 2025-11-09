@@ -1,3 +1,6 @@
+// ============================================
+// FILE: entities/role.entity.ts (UPDATED)
+// ============================================
 
 import {
   Entity,
@@ -10,17 +13,14 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { User } from '../user/entities/user.entity';
-// ============================================
-// ROLE ENTITY
-// ============================================
+import { User } from './user.entity';
 @Entity('roles')
 export class Role {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  name: string;
+  name: string; // 'SuperAdmin' | 'Admin' | 'Faculty' | 'Student'
 
   @OneToMany(() => User, (user) => user.role)
   users: User[];

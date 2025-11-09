@@ -9,7 +9,7 @@ import {
   JoinColumn,
   Index,
 } from 'typeorm';
-import { Role } from 'src/auth/role.entity';
+import { Role } from 'src/entities/role.entity';
 
 // ============================================
 // USER ENTITY
