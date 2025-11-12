@@ -1,67 +1,89 @@
+// ============================================
+// FILE: auth/auth.service.ts
+// ============================================
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import { User } from '../entities/user.entity';
 import { LoginDto } from './dto/login.dto';
-import { JwtPayload } from './jwt.strategy';
+import { AuthResponseDto } from './dto/auth-response.dto';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    private jwtService: JwtService,
+  ) {}
 
-  // Hardcoded demo credentials
-  private readonly users = {
-    admin: {
-      email: 'admin@portal.com',
-      password: 'admin123',
-      role: 'Admin',
-      userId: 'admin-001',
-    },
-    faculty: {
-      email: 'faculty@portal.com',
-      password: 'faculty123',
-      role: 'Faculty',
-      userId: 'faculty-001',
-    },
-    student: {
-      email: 'student@portal.com',
-      password: 'student123',
-      role: 'Student',
-      userId: 'student-001',
-    },
-  };
-
-  validateUser(email: string, password: string, role: string) {
-    const user = Object.values(this.users).find(
-      (u) => u.email === email && u.role === role,
-    );
-
-    if (user && user.password === password) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password: _, ...result } = user;
-      return result;
-    }
-    return null;
-  }
-
-  login(loginDto: LoginDto, role: string) {
-    const user = this.validateUser(loginDto.email, loginDto.password, role);
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    // Find user with role
+    const user = await this.userRepository.findOne({
+      where: { email: loginDto.email },
+      relations: ['role'],
+    });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Check if password exists (for invited users who haven't set password yet)
+    if (!user.password_hash) {
+      throw new UnauthorizedException('Please complete your registration first');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password_hash,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check account status
+    if (user.account_status !== 'active') {
+      throw new UnauthorizedException(
+        `Account is ${user.account_status}. Please verify your email or contact admin.`,
+      );
+    }
+
+    // Generate JWT token
     const payload: JwtPayload = {
-      userId: user.userId,
+      sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.role.name,
     };
 
+    const access_token = this.jwtService.sign(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token,
       user: {
-        userId: user.userId,
+        id: user.id,
+        name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.role.name,
+        email_verified: user.email_verified,
+        account_status: user.account_status,
       },
     };
+  }
+
+  async validateUser(userId: number): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return user;
   }
 }
