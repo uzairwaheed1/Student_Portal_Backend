@@ -15,6 +15,7 @@ import {
 } from 'typeorm';
 import { Role } from './role.entity';
 import { AdminProfile } from './admin-profile.entity';
+import { FacultyProfile } from '../admin/entities/faculty-profile.entity';
 
 @Entity('users')
 @Index(['email'])
@@ -29,7 +30,7 @@ export class User {
   email: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  password_hash: string;
+  password_hash: string | null;
 
   @Column({ type: 'int' })
   role_id: number;
@@ -69,4 +70,7 @@ export class User {
 
    @OneToOne(() => AdminProfile, (profile) => profile.user)
   adminProfile: AdminProfile;
+
+  @OneToOne(() => FacultyProfile, (profile) => profile.user)
+  facultyProfile: FacultyProfile;
 }

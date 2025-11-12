@@ -8,6 +8,9 @@ import { AuthModule } from './auth/auth.module';
 import { User } from './entities/user.entity';
 import { AdminProfile } from './entities/admin-profile.entity';
 import { SeedModule } from './seed/seed.module';
+import { EmailModule } from './email/email.module';
+import { InvitationModule } from './invitation/invitation.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
  imports: [
@@ -29,6 +32,9 @@ import { SeedModule } from './seed/seed.module';
     UserModule,
     AuthModule,
     SeedModule,
+    EmailModule, 
+    InvitationModule,  // Add this
+    AdminModule,   
   ],  controllers: [AppController],
   providers: [AppService],
 })

@@ -18,8 +18,8 @@ export class AdminProfile {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'int', unique: true })
-  user_id: number;
+  // @Column({ type: 'int', unique: true })
+  // userid: number;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   designation: string;
@@ -41,9 +41,13 @@ export class AdminProfile {
   // @JoinColumn({ name: 'user_id' })
   // user: User;
 
-   @OneToOne(() => User, (user) => user.adminProfile, { onDelete: 'CASCADE' })
+  @Column({ type: 'int', unique: true })
+  user_id: number;  // ✅ Explicit column
+  
+  @OneToOne(() => User, (user) => user.adminProfile, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
+  
 
 
 }
