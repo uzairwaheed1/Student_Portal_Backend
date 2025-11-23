@@ -5,6 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import { User } from '../entities/user.entity';
+import { AdminProfile } from '../entities/admin-profile.entity';
+import { FacultyProfile } from '../admin/entities/faculty-profile.entity';
 import { EmailService } from '../email/email.service';
 
 @Injectable()
@@ -12,6 +14,10 @@ export class InvitationService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(AdminProfile)
+    private adminProfileRepository: Repository<AdminProfile>,
+    @InjectRepository(FacultyProfile)
+    private facultyProfileRepository: Repository<FacultyProfile>,
     private emailService: EmailService,
     private configService: ConfigService,
   ) {}
@@ -30,6 +36,7 @@ export class InvitationService {
   }
 
   async sendInvitation(user: User, role: string): Promise<void> {
+    console.log('Sending invitation to user:', user);
     const token = await this.generateInvitationToken(user.id);
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
     const invitationLink = `${frontendUrl}/accept-invitation?token=${token}`;
@@ -80,6 +87,26 @@ export class InvitationService {
       invitation_token: undefined,
       invitation_expires_at: undefined,
     });
+
+    // Sync to profile based on role
+    const roleName = user.role.name;
+    if (roleName === 'Admin' || roleName === 'SuperAdmin') {
+      await this.adminProfileRepository.update(
+        { user_id: user.id },
+        {
+          email_verified: true,
+          account_status: 'active',
+        }
+      );
+    } else if (roleName === 'Faculty') {
+      await this.facultyProfileRepository.update(
+        { user_id: user.id },
+        {
+          email_verified: true,
+          account_status: 'active',
+        }
+      );
+    }
 
     return {
       message: 'Invitation accepted successfully. You can now login.',

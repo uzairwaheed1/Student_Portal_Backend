@@ -47,10 +47,10 @@ export class User {
   account_status: string; // 'pending' | 'active' | 'suspended'
 
   @Column({ type: 'varchar', length: 255, nullable: true })
-  invitation_token: string;
+  invitation_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  invitation_expires_at: Date;
+  invitation_expires_at: Date | null;
 
   @Column({ type: 'int', nullable: true })
   invited_by: number;

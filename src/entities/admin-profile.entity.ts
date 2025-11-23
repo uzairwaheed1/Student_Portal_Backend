@@ -34,6 +34,16 @@ export class AdminProfile {
   @Column({ type: 'boolean', default: false })
   is_super_admin: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  email_verified: boolean;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: 'pending'
+  })
+  account_status: string; // 'pending' | 'active' | 'suspended'
+
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 

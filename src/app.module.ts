@@ -11,6 +11,8 @@ import { SeedModule } from './seed/seed.module';
 import { EmailModule } from './email/email.module';
 import { InvitationModule } from './invitation/invitation.module';
 import { AdminModule } from './admin/admin.module';
+import { StudentModule } from './student/student.module';
+import { BatchModule } from './batch/batch.module';
 
 @Module({
  imports: [
@@ -35,6 +37,8 @@ import { AdminModule } from './admin/admin.module';
     EmailModule, 
     InvitationModule,  // Add this
     AdminModule,   
+    StudentModule,
+    BatchModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })

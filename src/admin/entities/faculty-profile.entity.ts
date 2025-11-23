@@ -29,7 +29,17 @@ import {
   
     @Column({ type: 'date', nullable: true })
     joining_date: Date;
-  
+
+    @Column({ type: 'boolean', default: false })
+    email_verified: boolean;
+
+    @Column({
+      type: 'varchar',
+      length: 20,
+      default: 'pending'
+    })
+    account_status: string; // 'pending' | 'active' | 'suspended'
+
     @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
   

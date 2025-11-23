@@ -1,4 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EmailService } from './email.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -8,7 +9,9 @@ class TestEmailDto {
   email: string;
 }
 
+@ApiTags('Email')
 @Controller('email')
+@ApiBearerAuth('JWT-auth')
 export class EmailController {
   constructor(private readonly emailService: EmailService) {}
 
@@ -17,6 +20,10 @@ export class EmailController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Send a test email to verify SMTP connectivity' })
+  @ApiBody({ type: TestEmailDto })
+  @ApiResponse({ status: 200, description: 'Email connectivity checked and test email attempted' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async testEmail(@Body() dto: TestEmailDto) {
     const isConnected = await this.emailService.testConnection();
     
@@ -45,6 +52,10 @@ export class EmailController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('SuperAdmin')
+  @ApiOperation({ summary: 'Send a sample invitation email to confirm template delivery' })
+  @ApiBody({ type: TestEmailDto })
+  @ApiResponse({ status: 200, description: 'Invitation email dispatched (or failure reported)' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async testInvitation(@Body() dto: TestEmailDto) {
     const sent = await this.emailService.sendInvitationEmail(
       dto.email,
