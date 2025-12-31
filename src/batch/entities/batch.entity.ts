@@ -5,8 +5,11 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
     OneToMany,
+    ManyToOne,
+    JoinColumn,
   } from 'typeorm';
   import { Semester } from '../../semester/entities/semester.entity';
+import { Program } from '../../program/entities/program.entity';
   
   @Entity('batches')
   export class Batch {
@@ -39,6 +42,9 @@ import {
   
     @Column({ type: 'int' })
     created_by: number;
+
+    @Column({ type: 'int', nullable: true })
+    program_id: number | null;
   
     @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
@@ -48,5 +54,9 @@ import {
   
     @OneToMany(() => Semester, (semester) => semester.batch)
     semesters: Semester[];
+
+    @ManyToOne(() => Program, (program) => program.batches)
+    @JoinColumn({ name: 'program_id' })
+    program: Program;
   }
   

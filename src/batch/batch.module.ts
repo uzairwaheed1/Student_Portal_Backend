@@ -6,10 +6,11 @@ import { Batch } from './entities/batch.entity';
 import { Semester } from '../semester/entities/semester.entity';
 import { StudentProfile } from '../student/entities/student-profile.entity';
 import { ActivityLog } from '../admin/entities/activity-log.entity';
+import { Program } from '../program/entities/program.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Batch, Semester, StudentProfile, ActivityLog]),
+    TypeOrmModule.forFeature([Batch, Semester, StudentProfile, ActivityLog, Program]),
   ],
   controllers: [BatchController],
   providers: [BatchService],

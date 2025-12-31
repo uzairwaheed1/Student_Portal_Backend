@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum } from 'class-validator';
+import { IsOptional, IsString, IsEnum, IsInt } from 'class-validator';
 
 export class UpdateBatchDto {
   @ApiProperty({
@@ -20,4 +20,13 @@ export class UpdateBatchDto {
   @IsOptional()
   @IsEnum(['Active', 'Graduated', 'Inactive'])
   status?: string;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Program ID (optional, can be null to remove association)',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  program_id?: number | null;
 }

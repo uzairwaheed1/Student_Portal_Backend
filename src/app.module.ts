@@ -13,6 +13,9 @@ import { InvitationModule } from './invitation/invitation.module';
 import { AdminModule } from './admin/admin.module';
 import { StudentModule } from './student/student.module';
 import { BatchModule } from './batch/batch.module';
+import { ProgramModule } from './program/program.module';
+import { PloModule } from './plo/plo.module';
+import { CoursesModule } from './courses/courses.module';
 
 @Module({
  imports: [
@@ -39,6 +42,9 @@ import { BatchModule } from './batch/batch.module';
     AdminModule,   
     StudentModule,
     BatchModule,
+    ProgramModule,
+    PloModule,
+    CoursesModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })

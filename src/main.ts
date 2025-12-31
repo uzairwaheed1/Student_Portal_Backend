@@ -43,6 +43,10 @@ async function bootstrap() {
     .addTag('Student', 'Student management endpoints')
     .addTag('Invitation', 'Invitation flow endpoints')
     .addTag('Pre-registration', 'Student pre-registration endpoints')
+    .addTag('Batch Management', 'Batch and semester management endpoints')
+    .addTag('Program', 'Program management endpoints')
+    .addTag('PLO', 'Program Learning Outcomes (PLO) management endpoints')
+    .addTag('Courses', 'Course management endpoints')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);

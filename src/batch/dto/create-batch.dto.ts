@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsInt, IsString, Min, Max } from 'class-validator';
+import { IsNotEmpty, IsInt, IsString, Min, Max, IsOptional } from 'class-validator';
 
 export class CreateBatchDto {
   @ApiProperty({
@@ -67,4 +67,13 @@ export class CreateBatchDto {
   @Min(1)
   @Max(12)
   semester_end_month: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Program ID (optional)',
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  program_id?: number;
 }

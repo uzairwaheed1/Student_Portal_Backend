@@ -10,6 +10,7 @@ import {
   import { Semester } from '../semester/entities/semester.entity';
   import { StudentProfile } from '../student/entities/student-profile.entity';
   import { ActivityLog } from '../admin/entities/activity-log.entity';
+  import { Program } from '../program/entities/program.entity';
   import { CreateBatchDto } from './dto/create-batch.dto';
   import { UpdateBatchDto } from './dto/update-batch.dto';
   
@@ -24,6 +25,8 @@ import {
       private studentProfileRepository: Repository<StudentProfile>,
       @InjectRepository(ActivityLog)
       private activityLogRepository: Repository<ActivityLog>,
+      @InjectRepository(Program)
+      private programRepository: Repository<Program>,
       private dataSource: DataSource,
     ) {}
   
@@ -34,6 +37,17 @@ import {
   
       if (existing) {
         throw new ConflictException('Batch name already exists');
+      }
+
+      // Validate program if program_id is provided
+      if (dto.program_id) {
+        const program = await this.programRepository.findOne({
+          where: { id: dto.program_id },
+        });
+
+        if (!program) {
+          throw new NotFoundException('Program not found');
+        }
       }
   
       const queryRunner = this.dataSource.createQueryRunner();
@@ -51,6 +65,7 @@ import {
           semester_end_month: dto.semester_end_month,
           status: 'Active',
           created_by: createdBy,
+          program_id: dto.program_id,
         });
   
         const savedBatch = await queryRunner.manager.save(batch);
@@ -168,6 +183,22 @@ import {
   
       if (!batch) {
         throw new NotFoundException('Batch not found');
+      }
+
+      // Validate program if program_id is being updated
+      if (dto.program_id !== undefined) {
+        if (dto.program_id !== null) {
+          const program = await this.programRepository.findOne({
+            where: { id: dto.program_id },
+          });
+
+          if (!program) {
+            throw new NotFoundException('Program not found');
+          }
+          batch.program_id = dto.program_id;
+        } else {
+          batch.program_id = null;
+        }
       }
   
       if (dto.name) batch.name = dto.name;
