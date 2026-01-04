@@ -16,6 +16,7 @@ import { BatchModule } from './batch/batch.module';
 import { ProgramModule } from './program/program.module';
 import { PloModule } from './plo/plo.module';
 import { CoursesModule } from './courses/courses.module';
+import { CloModule } from './clo/clo.module';
 
 @Module({
  imports: [
@@ -45,6 +46,7 @@ import { CoursesModule } from './courses/courses.module';
     ProgramModule,
     PloModule,
     CoursesModule,
+    CloModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })
