@@ -17,6 +17,7 @@ import { ProgramModule } from './program/program.module';
 import { PloModule } from './plo/plo.module';
 import { CoursesModule } from './courses/courses.module';
 import { CloModule } from './clo/clo.module';
+import { CloPloMappingModule } from './clo_plo_mapping/clo_plo_mapping.module';
 
 @Module({
  imports: [
@@ -47,6 +48,7 @@ import { CloModule } from './clo/clo.module';
     PloModule,
     CoursesModule,
     CloModule,
+    CloPloMappingModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })
