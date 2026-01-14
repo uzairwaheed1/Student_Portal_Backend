@@ -12,7 +12,7 @@ import {
     OneToOne,
   } from 'typeorm';
   import { User } from '../../entities/user.entity';
-  
+  import { CourseOffering } from '../../course-offering/entities/course-offering.entity';
   @Entity('faculty_profiles')
   export class FacultyProfile {
     @PrimaryGeneratedColumn()
@@ -48,6 +48,9 @@ import {
     @JoinColumn({ name: 'user_id' })
     user: User;
   
+    @OneToMany(() => CourseOffering, (offering) => offering.instructor)
+    courseOfferings: CourseOffering[];
+
     // If you have CourseFaculty entity, uncomment this:
     // @OneToMany(() => CourseFaculty, (cf) => cf.faculty)
     // courseFaculty: CourseFaculty[];

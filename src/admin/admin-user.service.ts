@@ -238,7 +238,7 @@ export class AdminUserService {
     });
     
     const data = users.map((user) => ({
-      id: user.id,
+      id:  user.facultyProfile?.id,
       name: user.name,
       email: user.email,
       account_status: user.facultyProfile?.account_status || user.account_status,

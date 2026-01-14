@@ -18,6 +18,8 @@ import { PloModule } from './plo/plo.module';
 import { CoursesModule } from './courses/courses.module';
 import { CloModule } from './clo/clo.module';
 import { CloPloMappingModule } from './clo_plo_mapping/clo_plo_mapping.module';
+import { StudentCoursePloResultModule } from './student-course-plo-result/student-course-plo-result.module';
+import { CourseOfferingModule } from './course-offering/course-offering.module';
 
 @Module({
  imports: [
@@ -49,6 +51,8 @@ import { CloPloMappingModule } from './clo_plo_mapping/clo_plo_mapping.module';
     CoursesModule,
     CloModule,
     CloPloMappingModule,
+    StudentCoursePloResultModule,
+    CourseOfferingModule,
   ],  controllers: [AppController],
   providers: [AppService],
 })

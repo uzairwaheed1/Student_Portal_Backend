@@ -6,9 +6,10 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany
 } from 'typeorm';
 import { Program } from '../../program/entities/program.entity';
-
+import { CourseOffering } from '../../course-offering/entities/course-offering.entity';
 @Entity('courses')
 export class Course {
   @PrimaryGeneratedColumn()
@@ -47,4 +48,8 @@ export class Course {
   @ManyToOne(() => Program, (program) => program.courses, { nullable: false })
   @JoinColumn({ name: 'program_id' })
   program: Program;
+
+  @OneToMany(() => CourseOffering, (offering) => offering.course)
+courseOfferings: CourseOffering[];
+
 }

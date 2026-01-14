@@ -6,8 +6,10 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToMany,
   } from 'typeorm';
   import { Batch } from '../../batch/entities/batch.entity';
+  import { CourseOffering } from '../../course-offering/entities/course-offering.entity';
   
   @Entity('semesters')
   export class Semester {
@@ -41,4 +43,7 @@ import {
     @ManyToOne(() => Batch, (batch) => batch.semesters)
     @JoinColumn({ name: 'batch_id' })
     batch: Batch;
+
+    @OneToMany(() => CourseOffering, (courseOffering) => courseOffering.semester)
+    courseOfferings: CourseOffering[];
   }
