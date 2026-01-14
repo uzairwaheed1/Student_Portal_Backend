@@ -10,6 +10,8 @@ import { UploadCoursePloResultsDto, StudentCoursePloDataDto } from './dto/upload
 import { Semester } from '../semester/entities/semester.entity';
 import { CourseOffering } from '../course-offering/entities/course-offering.entity';
 import { PreRegisteredStudent } from '../student/entities/pre-registered-student.entity';
+import { FacultyProfile } from '../admin/entities/faculty-profile.entity';
+import { User } from '../entities/user.entity';
 @Injectable()
 export class StudentCoursePloResultService {
   constructor(
@@ -29,8 +31,14 @@ export class StudentCoursePloResultService {
     private courseOfferingRepo: Repository<CourseOffering>,
     @InjectRepository(PreRegisteredStudent)
     private preRegisteredStudentRepo: Repository<PreRegisteredStudent>,
+    @InjectRepository(FacultyProfile)
+    private facultyProfileRepo: Repository<FacultyProfile>,
+    @InjectRepository(User)
+    private userRepo: Repository<User>,
     private dataSource: DataSource,
-  ) {}
+  ) {
+    console.log('🔥 Service constructor called');
+  }
 
   /**
    * Upload bulk PLO results for a course offering
@@ -44,9 +52,52 @@ export class StudentCoursePloResultService {
    * - Supports both registered and unregistered students
    * - Stores results against course_offering_id (one row per student + course_offering)
    * - Uses upsert behavior
+   * 
+   * @param uploadDto - The upload data containing course_offering_id and students
+   * @param userId - The user ID from JWT token (not faculty profile ID)
    */
-  async uploadBulkPloResults(uploadDto: UploadCoursePloResultsDto, facultyId: number) {
+  async uploadBulkPloResults(uploadDto: UploadCoursePloResultsDto, userId: number) {
     console.time('Upload PLO Results');
+
+    // Step 0: Get FacultyProfile ID from User ID
+    // The uploaded_by field references faculty_profiles.id, not users.id
+    // For Faculty: Use their existing FacultyProfile
+    // For Admin/SuperAdmin: Create a FacultyProfile if it doesn't exist (for upload tracking)
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      relations: ['role'],
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${userId} not found`);
+    }
+
+    let facultyProfile = await this.facultyProfileRepo.findOne({
+      where: { user_id: userId },
+    });
+
+    // If user is Admin or SuperAdmin and doesn't have a FacultyProfile, create one
+    if (!facultyProfile && (user.role.name === 'Admin' || user.role.name === 'SuperAdmin')) {
+      console.log(`📝 Creating FacultyProfile for ${user.role.name} user ID ${userId}`);
+      facultyProfile = this.facultyProfileRepo.create({
+        user_id: userId,
+        designation: user.role.name === 'SuperAdmin' ? 'Super Administrator' : 'Administrator',
+        department: 'Administration',
+        email_verified: user.email_verified,
+        account_status: user.account_status,
+      });
+      facultyProfile = await this.facultyProfileRepo.save(facultyProfile);
+      console.log(`✅ Created FacultyProfile ID ${facultyProfile.id} for ${user.role.name} user`);
+    }
+
+    if (!facultyProfile) {
+      throw new NotFoundException(
+        `Faculty profile not found for user ID ${userId}. User must be Faculty, Admin, or SuperAdmin.`,
+      );
+    }
+
+    const facultyId = facultyProfile.id;
+    console.log(`✅ Using FacultyProfile ID ${facultyId} for User ID ${userId} (Role: ${user.role.name})`);
 
     // Step 1: Validate course offering exists and load related data
     const courseOffering = await this.courseOfferingRepo.findOne({
@@ -71,12 +122,12 @@ export class StudentCoursePloResultService {
       );
     }
 
-    // Step 3: Validate semester is unlocked (locked semesters cannot be modified)
-    if (courseOffering.semester.is_locked) {
-      throw new BadRequestException(
-        `Cannot upload PLO results: Semester ${courseOffering.semester.number} is locked`,
-      );
-    }
+    // // Step 3: Validate semester is unlocked (locked semesters cannot be modified)
+    // if (courseOffering.semester.is_locked) {
+    //   throw new BadRequestException(
+    //     `Cannot upload PLO results: Semester ${courseOffering.semester.number} is locked`,
+    //   );
+    // }
 
     // Step 4: Get all pre-registered students in the batch for validation
     const preRegisteredStudents = await this.preRegisteredStudentRepo.find({
@@ -88,19 +139,19 @@ export class StudentCoursePloResultService {
       preRegisteredStudents.map((s) => [s.roll_no.toLowerCase().trim(), s]),
     );
 
-    // Step 5: Get registered students (if any) for student_id mapping
-    const registeredStudents = await this.studentRepo.find({
-      where: { batch_id: batchId },
-      relations: ['user'],
-    });
+    // // Step 5: Get registered students (if any) for student_id mapping
+    // const registeredStudents = await this.studentRepo.find({
+    //   where: { batch_id: batchId },
+    //   relations: ['user'],
+    // });
 
-    // Create a map for registered students: roll_no -> student profile
-    const registeredStudentMap = new Map(
-      registeredStudents.map((s) => [s.roll_no.toLowerCase().trim(), s]),
-    );
+    // // Create a map for registered students: roll_no -> student profile
+    // const registeredStudentMap = new Map(
+    //   registeredStudents.map((s) => [s.roll_no.toLowerCase().trim(), s]),
+    // );
 
     console.log(
-      `Found ${preRegStudentMap.size} pre-registered students and ${registeredStudentMap.size} registered students in batch ${courseOffering.semester.batch.name}`,
+      `Found ${preRegStudentMap.size} pre-registered students in batch ${courseOffering.semester.batch.name}`,
     );
 
     // Step 6: Prepare bulk data with validation
@@ -129,19 +180,21 @@ export class StudentCoursePloResultService {
 
       // Get student_id from StudentProfile (required for CourseStudentPloResult)
       // StudentProfile exists for both registered and potentially some unregistered students
-      const registeredStudent = registeredStudentMap.get(rollNo);
+      // const registeredStudent = registeredStudentMap.get(rollNo);
 
-      if (!registeredStudent) {
-        // No StudentProfile exists - student must be registered first
-        warnings.push(
-          `Student ${studentData.roll_no} does not have a student profile. They must be registered first. Skipping.`,
-        );
-        continue;
-      }
+      // if (!registeredStudent) {
+      //   // No StudentProfile exists - student must be registered first
+      //   warnings.push(
+      //     `Student ${studentData.roll_no} does not have a student profile. They must be registered first. Skipping.`,
+      //   );
+      //   continue;
+      // }
 
-      const studentId = registeredStudent.id;
-      const studentName = registeredStudent.user?.name || studentData.student_name;
+        // const studentId = registeredStudent.id;
+        // const studentName = registeredStudent.user?.name || studentData.student_name;
 
+        const studentId = preRegStudent.id;
+        const studentName = preRegStudent.student_name;
       // Prepare record with all PLO values
       bulkData.push({
         course_offering_id: uploadDto.course_offering_id,
@@ -150,7 +203,7 @@ export class StudentCoursePloResultService {
         semester_id: semesterId,
         student_id: studentId,
         roll_no: preRegStudent.roll_no,
-        student_name: studentName || studentData.student_name,
+        student_name: studentName,
         plo1_value: studentData.plo1 ?? undefined,
         plo2_value: studentData.plo2 ?? undefined,
         plo3_value: studentData.plo3 ?? undefined,
@@ -166,6 +219,8 @@ export class StudentCoursePloResultService {
         uploaded_by: facultyId,
       });
     }
+
+    console.log('🔥 bulkData:', bulkData);
 
     if (errors.length > 0) {
       throw new BadRequestException({
@@ -314,5 +369,161 @@ export class StudentCoursePloResultService {
     }
 
     return result[0];
+  }
+
+  /**
+   * Get list of all course offerings with uploaded PLO results
+   * Returns summary information for each course offering
+   */
+  async getCourseOfferingsWithResults(): Promise<any[]> {
+    const results = await this.courseStudentPloResultRepo
+      .createQueryBuilder('result')
+      .select('result.course_offering_id', 'course_offering_id')
+      .addSelect('COUNT(DISTINCT result.student_id)', 'student_count')
+      .addSelect('MAX(result.upload_timestamp)', 'last_upload_date')
+      .addSelect('MIN(result.upload_timestamp)', 'first_upload_date')
+      .groupBy('result.course_offering_id')
+      .getRawMany();
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    // Get course offering details for each
+    const courseOfferingIds = results.map((r) => r.course_offering_id);
+    const courseOfferings = await this.courseOfferingRepo.find({
+      where: courseOfferingIds.map((id) => ({ id })),
+      relations: ['course', 'semester', 'semester.batch', 'instructor', 'instructor.user'],
+    });
+
+    // Map results with course offering details
+    return results.map((result) => {
+      const offering = courseOfferings.find((co) => co.id === result.course_offering_id);
+      if (!offering) {
+        return null;
+      }
+
+      return {
+        course_offering_id: offering.id,
+        course: {
+          id: offering.course.id,
+          course_code: offering.course.course_code,
+          course_name: offering.course.course_name,
+          program_id: offering.course.program_id,
+        },
+        semester: {
+          id: offering.semester.id,
+          number: offering.semester.number,
+          batch_id: offering.semester.batch_id,
+        },
+        batch: {
+          id: offering.semester.batch.id,
+          name: offering.semester.batch.name,
+          program_id: offering.semester.batch.program_id,
+        },
+        instructor: {
+          id: offering.instructor.id,
+          name: offering.instructor.user.name,
+          email: offering.instructor.user.email,
+        },
+        summary: {
+          student_count: parseInt(result.student_count, 10),
+          last_upload_date: result.last_upload_date,
+          first_upload_date: result.first_upload_date,
+        },
+      };
+    }).filter((item) => item !== null);
+  }
+
+  /**
+   * Get all student PLO results for a specific course offering
+   * Returns detailed data for popup table display
+   */
+  async getCourseOfferingResults(courseOfferingId: number): Promise<any> {
+    // First, get course offering details
+    const courseOffering = await this.courseOfferingRepo.findOne({
+      where: { id: courseOfferingId },
+      relations: ['course', 'semester', 'semester.batch', 'instructor', 'instructor.user'],
+    });
+
+    if (!courseOffering) {
+      throw new NotFoundException(
+        `Course offering with ID ${courseOfferingId} not found`,
+      );
+    }
+
+    // Get all student results for this course offering
+    const results = await this.courseStudentPloResultRepo.find({
+      where: { course_offering_id: courseOfferingId },
+      relations: ['faculty', 'faculty.user'],
+      order: { roll_no: 'ASC' },
+    });
+
+    // Format the response
+    return {
+      course_offering: {
+        id: courseOffering.id,
+        course: {
+          id: courseOffering.course.id,
+          course_code: courseOffering.course.course_code,
+          course_name: courseOffering.course.course_name,
+          program_id: courseOffering.course.program_id,
+        },
+        semester: {
+          id: courseOffering.semester.id,
+          number: courseOffering.semester.number,
+          batch_id: courseOffering.semester.batch_id,
+        },
+        batch: {
+          id: courseOffering.semester.batch.id,
+          name: courseOffering.semester.batch.name,
+          program_id: courseOffering.semester.batch.program_id,
+        },
+        instructor: {
+          id: courseOffering.instructor.id,
+          name: courseOffering.instructor.user.name,
+          email: courseOffering.instructor.user.email,
+        },
+      },
+      students: results.map((result) => ({
+        id: result.id,
+        student_id: result.student_id,
+        roll_no: result.roll_no,
+        student_name: result.student_name,
+        plo1: result.plo1_value,
+        plo2: result.plo2_value,
+        plo3: result.plo3_value,
+        plo4: result.plo4_value,
+        plo5: result.plo5_value,
+        plo6: result.plo6_value,
+        plo7: result.plo7_value,
+        plo8: result.plo8_value,
+        plo9: result.plo9_value,
+        plo10: result.plo10_value,
+        plo11: result.plo11_value,
+        plo12: result.plo12_value,
+        upload_timestamp: result.upload_timestamp,
+        uploaded_by: {
+          id: result.faculty?.id,
+          name: result.faculty?.user?.name,
+          email: result.faculty?.user?.email,
+        },
+      })),
+      summary: {
+        total_students: results.length,
+        last_upload_date: results.length > 0
+          ? results.reduce((latest, r) =>
+              r.upload_timestamp > latest ? r.upload_timestamp : latest,
+              results[0].upload_timestamp,
+            )
+          : null,
+        first_upload_date: results.length > 0
+          ? results.reduce((earliest, r) =>
+              r.upload_timestamp < earliest ? r.upload_timestamp : earliest,
+              results[0].upload_timestamp,
+            )
+          : null,
+      },
+    };
   }
 }

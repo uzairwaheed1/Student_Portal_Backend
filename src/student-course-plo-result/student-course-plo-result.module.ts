@@ -10,6 +10,8 @@ import { Semester } from '../semester/entities/semester.entity';
 import { ActivityLog } from '../admin/entities/activity-log.entity';
 import { CourseOffering } from '../course-offering/entities/course-offering.entity';
 import { PreRegisteredStudent } from '../student/entities/pre-registered-student.entity';
+import { FacultyProfile } from '../admin/entities/faculty-profile.entity';
+import { User } from '../entities/user.entity';
 
 @Module({
   imports: [TypeOrmModule.forFeature([
@@ -21,6 +23,8 @@ import { PreRegisteredStudent } from '../student/entities/pre-registered-student
     ActivityLog,
     CourseOffering,
     PreRegisteredStudent,
+    FacultyProfile,
+    User,
   ])],
   controllers: [StudentCoursePloResultController],
   providers: [StudentCoursePloResultService],

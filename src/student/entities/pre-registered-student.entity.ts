@@ -15,6 +15,9 @@ import {
   
     @Column({ type: 'varchar', length: 50, unique: true })
     roll_no: string;
+
+    @Column({ type: 'varchar', length: 255 })
+    student_name: string;
   
     @Column({ type: 'int' })
     batch_id: number;

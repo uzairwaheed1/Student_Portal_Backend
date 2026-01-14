@@ -5,7 +5,7 @@ import { StudentProfile } from '../../student/entities/student-profile.entity';
 import { FacultyProfile } from '../../admin/entities/faculty-profile.entity';
 import { Semester } from '../../semester/entities/semester.entity';
 import { CourseOffering } from '../../course-offering/entities/course-offering.entity';
-
+import {PreRegisteredStudent} from '../../student/entities/pre-registered-student.entity';
 @Entity('course_student_plo_results')
 @Unique('unique_student_course_offering', ['course_offering_id', 'student_id'])
 @Index('idx_course_offering_id', ['course_offering_id'])
@@ -86,9 +86,9 @@ export class CourseStudentPloResult {
   @JoinColumn({ name: 'batch_id' })
   batch: Batch;
 
-  @ManyToOne(() => StudentProfile)
+  @ManyToOne(() => PreRegisteredStudent, { eager: false })
   @JoinColumn({ name: 'student_id' })
-  student: StudentProfile;
+  preRegisteredStudent: PreRegisteredStudent;
 
   @ManyToOne(() => FacultyProfile)
   @JoinColumn({ name: 'uploaded_by' })
