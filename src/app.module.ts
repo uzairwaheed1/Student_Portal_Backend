@@ -3,9 +3,10 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
+import { User } from './entities/user.entity';
+import { AdminProfile } from './entities/admin-profile.entity';
 import { SeedModule } from './seed/seed.module';
 import { EmailModule } from './email/email.module';
 import { InvitationModule } from './invitation/invitation.module';
@@ -17,19 +18,14 @@ import { PloModule } from './plo/plo.module';
 import { CoursesModule } from './courses/courses.module';
 import { CloModule } from './clo/clo.module';
 import { CloPloMappingModule } from './clo_plo_mapping/clo_plo_mapping.module';
-
 import { StudentCoursePloResultModule } from './student-course-plo-result/student-course-plo-result.module';
 import { CourseOfferingModule } from './course-offering/course-offering.module';
 
-import { User } from './entities/user.entity';
-import { AdminProfile } from './entities/admin-profile.entity';
-
 @Module({
-  imports: [
+ imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
+      isGlobal: true, // so you can use process.env anywhere
     }),
-
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -37,18 +33,17 @@ import { AdminProfile } from './entities/admin-profile.entity';
       username: process.env.DB_USER,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      autoLoadEntities: true,
-      synchronize: true,
+      autoLoadEntities: true, // automatically loads entities
+      synchronize: true, // only for development, not for production
     }),
-
-    TypeOrmModule.forFeature([User, AdminProfile]),
+        TypeOrmModule.forFeature([User, AdminProfile]),
 
     UserModule,
     AuthModule,
     SeedModule,
-    EmailModule,
-    InvitationModule,
-    AdminModule,
+    EmailModule, 
+    InvitationModule,  // Add this
+    AdminModule,   
     StudentModule,
     BatchModule,
     ProgramModule,
@@ -56,12 +51,9 @@ import { AdminProfile } from './entities/admin-profile.entity';
     CoursesModule,
     CloModule,
     CloPloMappingModule,
-
-    // ✅ KEEP ALL
     StudentCoursePloResultModule,
     CourseOfferingModule,
-  ],
-  controllers: [AppController],
+  ],  controllers: [AppController],
   providers: [AppService],
 })
 export class AppModule {}

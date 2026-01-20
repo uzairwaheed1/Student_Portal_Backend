@@ -1,20 +1,62 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { SeedService } from './seed/seed.service';
 import { Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { LoggingInterceptor } from './student-course-plo-result/logging.interceptor';
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
-  // Enable global validation
+  // Add logging interceptor to see all requests
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Enable global validation with detailed error messages
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false, // Temporarily set to false to see if extra fields are causing issues
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+      skipMissingProperties: false,
+      skipNullProperties: false,
+      skipUndefinedProperties: false,
+      exceptionFactory: (errors) => {
+        // Log validation errors for debugging
+        console.error('❌ VALIDATION FAILED - Errors:', JSON.stringify(errors, null, 2));
+        console.error('❌ VALIDATION FAILED - Error count:', errors.length);
+        
+        errors.forEach((error, index) => {
+          console.error(`❌ Error ${index + 1}:`, {
+            property: error.property,
+            value: error.value,
+            constraints: error.constraints,
+            children: error.children,
+          });
+        });
+        
+        const messages = errors.map((error) => {
+          const constraints = error.constraints || {};
+          const property = error.property || 'unknown';
+          const constraintMessages = Object.values(constraints);
+          return `${property}: ${constraintMessages.join(', ')}`;
+        });
+        
+        return new BadRequestException({
+          statusCode: 400,
+          message: 'Validation failed',
+          errors: messages,
+          details: errors.map((error) => ({
+            property: error.property,
+            value: error.value,
+            constraints: error.constraints,
+          })),
+        });
+      },
     }),
   );
 

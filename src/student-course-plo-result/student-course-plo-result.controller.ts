@@ -1,6 +1,5 @@
-import { Controller, Post, Get, Body, Param, ParseIntPipe, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, ParseIntPipe, Request, UseGuards, BadRequestException } from '@nestjs/common';
 import { StudentCoursePloResultService } from './student-course-plo-result.service';
-import { PLOCalculationService } from './plo-calculation.service';
 import { UploadCoursePloResultsDto } from './dto/upload-course-plo-results.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -12,19 +11,38 @@ import {ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagge
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('SuperAdmin', 'Admin', 'Faculty')
 export class StudentCoursePloResultController {
-  constructor(
-    private readonly studentCoursePloResultService: StudentCoursePloResultService,
-    private readonly ploCalculationService: PLOCalculationService,
-  ) {}
+  constructor(private readonly studentCoursePloResultService: StudentCoursePloResultService) {
+    console.log('🧪 service injected:', studentCoursePloResultService);
+    console.log('🔥 controller constructor called');
+  }
 
   @Post('upload-bulk')
   @ApiOperation({ summary: 'Upload bulk PLO results for a course offering' })
   @ApiResponse({ status: 201, description: 'PLO results uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   async uploadBulkResults(@Body() uploadDto: UploadCoursePloResultsDto, @Request() req) {
-    const facultyId = req.user?.facultyId || 1; // Get from JWT token
-    return this.studentCoursePloResultService.uploadBulkPloResults(uploadDto, facultyId);
-  }
+    console.log('✅ API HIT: uploadBulkResults - Validation passed!');
+    console.log('📦 uploadDto:', JSON.stringify(uploadDto, null, 2));
+    console.log('👤 req.user:', req.user);
+    
+    // Get user ID from JWT token (service will resolve FacultyProfile ID)
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new BadRequestException('User ID not found in token');
+    }
+    console.log('🆔 userId from token:', userId);
+    
+    try {
+      console.log('🚀 About to call uploadBulkPloResults...');
+      const result = await this.studentCoursePloResultService.uploadBulkPloResults(uploadDto, userId);
+      console.log('✅ uploadBulkPloResults completed:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ Error in uploadBulkPloResults:', error);
+      console.error('Stack trace:', error.stack);
+      throw error;
+    }
+    }
 
   @Get('student/:studentId/batch/:batchId')
   @ApiOperation({ summary: 'Get PLO results for a student in a batch' })
@@ -38,51 +56,96 @@ export class StudentCoursePloResultController {
   }
 
   /**
-   * Manual recalculation for entire batch
-   * POST /student-course-plo-results/recalculate/batch/1
+   * GET /student-course-plo-results/course-offerings
+   * Get list of all course offerings with uploaded PLO results
+   * Used for displaying the list of uploaded results
    */
-  @Post('recalculate/batch/:batchId')
-  @ApiOperation({ summary: 'Manually recalculate program-level PLOs for all students in a batch' })
-  @ApiResponse({ status: 200, description: 'PLOs recalculated successfully' })
-  @ApiResponse({ status: 400, description: 'Invalid batch ID' })
-  async recalculateBatch(@Param('batchId', ParseIntPipe) batchId: number) {
-    await this.ploCalculationService.recalculateForBatch(batchId);
-    return {
-      success: true,
-      message: `PLOs recalculated for batch ${batchId}`,
-    };
+  @Get('course-offerings')
+  @ApiOperation({ summary: 'Get list of all course offerings with uploaded PLO results' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of course offerings with results retrieved successfully',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          course_offering_id: { type: 'number' },
+          course: { type: 'object' },
+          semester: { type: 'object' },
+          batch: { type: 'object' },
+          instructor: { type: 'object' },
+          summary: {
+            type: 'object',
+            properties: {
+              student_count: { type: 'number' },
+              last_upload_date: { type: 'string', format: 'date-time' },
+              first_upload_date: { type: 'string', format: 'date-time' },
+            }
+          }
+        }
+      }
+    }
+  })
+  async getCourseOfferingsWithResults() {
+    return this.studentCoursePloResultService.getCourseOfferingsWithResults();
   }
 
   /**
-   * Get student's program-level PLO summary
-   * GET /student-course-plo-results/program-plos/B20CS001
+   * GET /student-course-plo-results/course-offering/:courseOfferingId
+   * Get all student PLO results for a specific course offering
+   * Used for displaying detailed results in popup table
    */
-  @Get('program-plos/:rollNo')
-  @ApiOperation({ summary: 'Get program-level PLO summary for a student by roll number' })
-  @ApiResponse({ status: 200, description: 'PLO summary retrieved successfully' })
-  async getStudentProgramPLOsByRollNo(@Param('rollNo') rollNo: string) {
-    const plos = await this.ploCalculationService.getStudentPLOSummary(rollNo);
-    
-    return {
-      roll_no: rollNo,
-      total_plos: plos.length,
-      plos: plos,
-    };
-  }
-
-  /**
-   * Get batch-level PLO statistics
-   * GET /student-course-plo-results/batch-statistics/1
-   */
-  @Get('batch-statistics/:batchId')
-  @ApiOperation({ summary: 'Get batch-level PLO statistics and aggregates' })
-  @ApiResponse({ status: 200, description: 'Batch statistics retrieved successfully' })
-  async getBatchStatistics(@Param('batchId', ParseIntPipe) batchId: number) {
-    const stats = await this.ploCalculationService.getBatchPLOStatistics(batchId);
-    
-    return {
-      batch_id: batchId,
-      statistics: stats,
-    };
+  @Get('course-offering/:courseOfferingId')
+  @ApiOperation({ summary: 'Get all student PLO results for a specific course offering' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Course offering results retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        course_offering: { type: 'object' },
+        students: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'number' },
+              student_id: { type: 'number' },
+              roll_no: { type: 'string' },
+              student_name: { type: 'string' },
+              plo1: { type: 'number', nullable: true },
+              plo2: { type: 'number', nullable: true },
+              plo3: { type: 'number', nullable: true },
+              plo4: { type: 'number', nullable: true },
+              plo5: { type: 'number', nullable: true },
+              plo6: { type: 'number', nullable: true },
+              plo7: { type: 'number', nullable: true },
+              plo8: { type: 'number', nullable: true },
+              plo9: { type: 'number', nullable: true },
+              plo10: { type: 'number', nullable: true },
+              plo11: { type: 'number', nullable: true },
+              plo12: { type: 'number', nullable: true },
+              upload_timestamp: { type: 'string', format: 'date-time' },
+              uploaded_by: { type: 'object' },
+            }
+          }
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            total_students: { type: 'number' },
+            last_upload_date: { type: 'string', format: 'date-time', nullable: true },
+            first_upload_date: { type: 'string', format: 'date-time', nullable: true },
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 404, description: 'Course offering not found' })
+  async getCourseOfferingResults(
+    @Param('courseOfferingId', ParseIntPipe) courseOfferingId: number,
+  ) {
+    return this.studentCoursePloResultService.getCourseOfferingResults(courseOfferingId);
   }
 }
