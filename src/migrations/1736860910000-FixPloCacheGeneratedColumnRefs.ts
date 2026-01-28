@@ -1,8 +1,12 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateAutoCalculatePloTrigger1736860900000 implements MigrationInterface {
+/**
+ * Fix SQL state 428C9: cannot insert into GENERATED ALWAYS AS columns.
+ * recalculate_student_program_plos previously inserted is_achieved and achievement_level;
+ * both are generated from average_attainment and must not be set by application/trigger code.
+ */
+export class FixPloCacheGeneratedColumnRefs1736860910000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Create function to recalculate PLOs for a student
     await queryRunner.query(`
       CREATE OR REPLACE FUNCTION recalculate_student_program_plos(
         p_roll_no VARCHAR(50),
@@ -20,15 +24,11 @@ export class CreateAutoCalculatePloTrigger1736860900000 implements MigrationInte
         contrib_courses JSONB;
         contrib_course JSONB;
       BEGIN
-        -- Loop through each PLO (1 to 12)
         FOR plo_num IN 1..12 LOOP
           plo_key := 'plo' || plo_num || '_value';
-          
-          -- Reset arrays
           plo_values := ARRAY[]::NUMERIC[];
           contrib_courses := '[]'::JSONB;
-          
-          -- Fetch all course-level PLO data for this student
+
           FOR course_record IN
             SELECT 
               c.course_code,
@@ -40,118 +40,76 @@ export class CreateAutoCalculatePloTrigger1736860900000 implements MigrationInte
             WHERE cspr.roll_no = p_roll_no
               AND cspr.batch_id = p_batch_id
           LOOP
-            -- Get the PLO value dynamically
             CASE plo_num
               WHEN 1 THEN IF course_record.plo1_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo1_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo1_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo1_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 2 THEN IF course_record.plo2_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo2_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo2_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo2_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 3 THEN IF course_record.plo3_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo3_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo3_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo3_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 4 THEN IF course_record.plo4_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo4_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo4_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo4_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 5 THEN IF course_record.plo5_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo5_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo5_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo5_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 6 THEN IF course_record.plo6_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo6_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo6_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo6_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 7 THEN IF course_record.plo7_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo7_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo7_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo7_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 8 THEN IF course_record.plo8_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo8_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo8_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo8_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 9 THEN IF course_record.plo9_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo9_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo9_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo9_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 10 THEN IF course_record.plo10_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo10_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo10_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo10_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 11 THEN IF course_record.plo11_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo11_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo11_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo11_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
               WHEN 12 THEN IF course_record.plo12_value IS NOT NULL THEN
                 plo_values := array_append(plo_values, course_record.plo12_value);
-                contrib_course := jsonb_build_object(
-                  'course_code', course_record.course_code,
-                  'attainment', course_record.plo12_value
-                );
+                contrib_course := jsonb_build_object('course_code', course_record.course_code, 'attainment', course_record.plo12_value);
                 contrib_courses := contrib_courses || jsonb_build_array(contrib_course);
               END IF;
             END CASE;
           END LOOP;
-          
-          -- Calculate average if we have values
+
           IF array_length(plo_values, 1) > 0 THEN
-            -- Calculate total and average
             SELECT COALESCE(SUM(val), 0), COUNT(*)
             INTO total_attr, course_count
             FROM unnest(plo_values) AS val;
-            
             avg_attr := total_attr / course_count;
-            
-            -- Insert or update cache. Do NOT set is_achieved or achievement_level:
-            -- they are GENERATED ALWAYS AS columns (from average_attainment).
+
             INSERT INTO student_program_plo_cache (
               roll_no,
               batch_id,
@@ -181,7 +139,6 @@ export class CreateAutoCalculatePloTrigger1736860900000 implements MigrationInte
               last_calculated = NOW(),
               updated_at = NOW();
           ELSE
-            -- No data for this PLO, remove from cache if exists
             DELETE FROM student_program_plo_cache
             WHERE roll_no = p_roll_no AND plo_number = plo_num;
           END IF;
@@ -189,77 +146,10 @@ export class CreateAutoCalculatePloTrigger1736860900000 implements MigrationInte
       END;
       $$ LANGUAGE plpgsql;
     `);
-
-    // Create trigger function that fires on INSERT/UPDATE/DELETE
-    await queryRunner.query(`
-      CREATE OR REPLACE FUNCTION trigger_recalculate_plo_cache()
-      RETURNS TRIGGER AS $$
-      DECLARE
-        v_roll_no VARCHAR(50);
-        v_batch_id INTEGER;
-      BEGIN
-        -- Determine which roll_no and batch_id to use
-        IF TG_OP = 'DELETE' THEN
-          v_roll_no := OLD.roll_no;
-          v_batch_id := OLD.batch_id;
-        ELSE
-          v_roll_no := NEW.roll_no;
-          v_batch_id := NEW.batch_id;
-        END IF;
-        
-        -- Recalculate PLOs for this student
-        PERFORM recalculate_student_program_plos(v_roll_no, v_batch_id);
-        
-        -- Return appropriate record
-        IF TG_OP = 'DELETE' THEN
-          RETURN OLD;
-        ELSE
-          RETURN NEW;
-        END IF;
-      END;
-      $$ LANGUAGE plpgsql;
-    `);
-
-    // Create triggers
-    await queryRunner.query(`
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_insert ON course_student_plo_results;
-      CREATE TRIGGER trg_course_student_plo_results_insert
-        AFTER INSERT ON course_student_plo_results
-        FOR EACH ROW
-        EXECUTE FUNCTION trigger_recalculate_plo_cache();
-    `);
-
-    await queryRunner.query(`
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_update ON course_student_plo_results;
-      CREATE TRIGGER trg_course_student_plo_results_update
-        AFTER UPDATE ON course_student_plo_results
-        FOR EACH ROW
-        EXECUTE FUNCTION trigger_recalculate_plo_cache();
-    `);
-
-    await queryRunner.query(`
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_delete ON course_student_plo_results;
-      CREATE TRIGGER trg_course_student_plo_results_delete
-        AFTER DELETE ON course_student_plo_results
-        FOR EACH ROW
-        EXECUTE FUNCTION trigger_recalculate_plo_cache();
-    `);
   }
 
-  public async down(queryRunner: QueryRunner): Promise<void> {
-    // Drop triggers
-    await queryRunner.query(`
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_insert ON course_student_plo_results;
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_update ON course_student_plo_results;
-      DROP TRIGGER IF EXISTS trg_course_student_plo_results_delete ON course_student_plo_results;
-    `);
-
-    // Drop functions
-    await queryRunner.query(`
-      DROP FUNCTION IF EXISTS trigger_recalculate_plo_cache() CASCADE;
-      DROP FUNCTION IF EXISTS recalculate_student_program_plos(VARCHAR, INTEGER) CASCADE;
-    `);
+  public async down(_queryRunner: QueryRunner): Promise<void> {
+    /* No-op: previous migration defines the function. Reverting would require
+       restoring the old, broken version. Use migration 1736860900000 fix instead. */
   }
 }
-
-

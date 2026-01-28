@@ -46,4 +46,3 @@ export class StudentProgramPloCache {
   @UpdateDateColumn()
   updated_at: Date;
 }
-

@@ -28,11 +28,11 @@ export class CreateStudentProgramPloCache1736860800000 implements MigrationInter
           average_attainment DECIMAL(5,2) NOT NULL DEFAULT 0 CHECK (average_attainment >= 0 AND average_attainment <= 100),
           
           -- Achievement Status
-          is_achieved BOOLEAN GENERATED ALWAYS AS (average_attainment >= 50) STORED,
+          is_achieved BOOLEAN GENERATED ALWAYS AS (average_attainment >= 0.50) STORED,
           achievement_level VARCHAR(20) GENERATED ALWAYS AS (
             CASE 
-              WHEN average_attainment >= 80 THEN 'High'
-              WHEN average_attainment >= 70 THEN 'Medium'
+              WHEN average_attainment >= 0.80 THEN 'High'
+              WHEN average_attainment >= 0.70 THEN 'Medium'
               ELSE 'Low'
             END
           ) STORED,
