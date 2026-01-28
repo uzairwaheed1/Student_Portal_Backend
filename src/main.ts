@@ -90,7 +90,7 @@ async function bootstrap() {
     .addTag('PLO', 'Program Learning Outcomes (PLO) management endpoints')
     .addTag('Courses', 'Course management endpoints')
     .addTag('CLOs (Course Learning Outcomes)', 'Manage Course Learning Outcomes')
-    
+    .addTag('PLO Attainments', 'Program-level PLO attainments from cache (batches, students)')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
